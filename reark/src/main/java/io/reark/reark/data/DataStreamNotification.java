@@ -34,7 +34,8 @@ public final class DataStreamNotification<T> {
 
     public enum Type {
         FETCHING_START,
-        FETCHING_COMPLETED,
+        FETCHING_COMPLETED_WITH_VALUE,
+        FETCHING_COMPLETED_WITHOUT_VALUE,
         FETCHING_ERROR,
         ON_NEXT
     }
@@ -82,8 +83,13 @@ public final class DataStreamNotification<T> {
     }
 
     @NonNull
-    public static<T> DataStreamNotification<T> fetchingCompleted() {
-        return new DataStreamNotification<>(Type.FETCHING_COMPLETED, null, null);
+    public static<T> DataStreamNotification<T> fetchingCompletedWithValue() {
+        return new DataStreamNotification<>(Type.FETCHING_COMPLETED_WITH_VALUE, null, null);
+    }
+
+    @NonNull
+    public static<T> DataStreamNotification<T> fetchingCompletedWithoutValue() {
+        return new DataStreamNotification<>(Type.FETCHING_COMPLETED_WITHOUT_VALUE, null, null);
     }
 
     @NonNull
@@ -99,8 +105,12 @@ public final class DataStreamNotification<T> {
         return type == Type.ON_NEXT;
     }
 
-    public boolean isFetchingCompleted() {
-        return type == Type.FETCHING_COMPLETED;
+    public boolean isFetchingCompletedWithValue() {
+        return type == Type.FETCHING_COMPLETED_WITH_VALUE;
+    }
+
+    public boolean isFetchingCompletedWithoutValue() {
+        return type == Type.FETCHING_COMPLETED_WITHOUT_VALUE;
     }
 
     public boolean isFetchingError() {

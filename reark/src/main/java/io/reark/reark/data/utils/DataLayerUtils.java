@@ -61,13 +61,16 @@ public final class DataLayerUtils {
             switch (networkRequestStatus.getStatus()) {
                 case NETWORK_STATUS_ONGOING:
                     return DataStreamNotification.fetchingStart();
-                case NETWORK_STATUS_COMPLETED:
-                    return DataStreamNotification.fetchingCompleted();
+                case NETWORK_STATUS_COMPLETED_WITH_VALUE:
+                    return DataStreamNotification.fetchingCompletedWithValue();
+                case NETWORK_STATUS_COMPLETED_WITHOUT_VALUE:
+                    return DataStreamNotification.fetchingCompletedWithoutValue();
                 case NETWORK_STATUS_ERROR:
                     return DataStreamNotification.fetchingError();
+                case NETWORK_STATUS_NONE:
+                default:
+                    throw new IllegalStateException("Unexpected network status " + networkRequestStatus);
             }
-
-            throw new IllegalStateException("Unexpected network status " + networkRequestStatus);
         };
     }
 }

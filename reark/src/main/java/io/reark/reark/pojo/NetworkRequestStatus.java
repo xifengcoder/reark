@@ -28,7 +28,7 @@ package io.reark.reark.pojo;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import static io.reark.reark.pojo.NetworkRequestStatus.Status.NETWORK_STATUS_COMPLETED;
+import static io.reark.reark.pojo.NetworkRequestStatus.Status.NETWORK_STATUS_COMPLETED_WITH_VALUE;
 import static io.reark.reark.pojo.NetworkRequestStatus.Status.NETWORK_STATUS_ERROR;
 import static io.reark.reark.pojo.NetworkRequestStatus.Status.NETWORK_STATUS_NONE;
 import static io.reark.reark.pojo.NetworkRequestStatus.Status.NETWORK_STATUS_ONGOING;
@@ -50,7 +50,8 @@ public final class NetworkRequestStatus {
     public enum Status {
         NETWORK_STATUS_NONE("networkStatusNone"),
         NETWORK_STATUS_ONGOING("networkStatusOngoing"),
-        NETWORK_STATUS_COMPLETED("networkStatusCompleted"),
+        NETWORK_STATUS_COMPLETED_WITH_VALUE("networkStatusCompletedWithValue"),
+        NETWORK_STATUS_COMPLETED_WITHOUT_VALUE("networkStatusCompletedWithoutValue"),
         NETWORK_STATUS_ERROR("networkStatusError");
 
         private final String status;
@@ -91,7 +92,7 @@ public final class NetworkRequestStatus {
 
     @NonNull
     public static NetworkRequestStatus completed(@NonNull final String uri) {
-        return new NetworkRequestStatus(get(uri), NETWORK_STATUS_COMPLETED, 0, null);
+        return new NetworkRequestStatus(get(uri), NETWORK_STATUS_COMPLETED_WITH_VALUE, 0, null);
     }
 
     @NonNull
@@ -130,7 +131,7 @@ public final class NetworkRequestStatus {
     }
 
     public boolean isCompleted() {
-        return status == NETWORK_STATUS_COMPLETED;
+        return status == NETWORK_STATUS_COMPLETED_WITH_VALUE;
     }
 
     @Override
