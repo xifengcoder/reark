@@ -69,11 +69,11 @@ public abstract class FetcherBase<T> implements Fetcher<T> {
         updateNetworkRequestStatus.call(NetworkRequestStatus.error(uri, errorCode, errorMessage));
     }
 
-    protected void completeRequest(@NonNull final String uri) {
+    protected void completeRequest(@NonNull final String uri, boolean withValue) {
         checkNotNull(uri);
 
         Log.v(TAG, "completeRequest(" + uri + ")");
-        updateNetworkRequestStatus.call(NetworkRequestStatus.completed(uri));
+        updateNetworkRequestStatus.call(NetworkRequestStatus.completed(uri, withValue));
     }
 
     protected boolean isOngoingRequest(int requestId) {

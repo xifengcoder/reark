@@ -29,18 +29,19 @@ import android.content.Intent;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import io.reark.reark.data.stores.interfaces.StorePutInterface;
 import io.reark.reark.pojo.NetworkRequestStatus;
 import io.reark.reark.utils.Log;
+import io.reark.reark.utils.RxUtils;
 import io.reark.rxgithubapp.shared.network.GitHubService;
 import io.reark.rxgithubapp.shared.network.NetworkApi;
 import io.reark.rxgithubapp.shared.pojo.GitHubRepository;
 import io.reark.rxgithubapp.shared.pojo.GitHubRepositorySearch;
 import rx.Observable;
+import rx.Single;
 import rx.Subscription;
 import rx.functions.Action1;
 import rx.schedulers.Schedulers;
@@ -94,25 +95,25 @@ public class GitHubRepositorySearchFetcher extends AppFetcherBase<Uri> {
 
         Subscription subscription = createNetworkObservable(searchString)
                 .subscribeOn(Schedulers.computation())
-                .map((repositories) -> {
-                    final List<Integer> repositoryIds = new ArrayList<>(repositories.size());
-                    for (GitHubRepository repository : repositories) {
-                        gitHubRepositoryStore.put(repository);
-                        repositoryIds.add(repository.getId());
-                    }
-                    return new GitHubRepositorySearch(searchString, repositoryIds);
-                })
+                .toObservable()
+                .flatMap(Observable::from)
+                .doOnNext(gitHubRepositoryStore::put)
+                .map(GitHubRepository::getId)
+                .toList()
+                .toSingle()
+                .map(idList -> new GitHubRepositorySearch(searchString, idList))
+                .flatMap(gitHubRepositorySearchStore::put)
                 .doOnSubscribe(() -> startRequest(uri))
-                .doOnCompleted(() -> completeRequest(uri))
+                .doOnSuccess(updated -> completeRequest(uri, updated))
                 .doOnError(doOnError(uri))
-                .subscribe(gitHubRepositorySearchStore::put,
-                        e -> Log.e(TAG, "Error fetching GitHub repository search for '" + searchString + "'", e));
+                .subscribe(RxUtils::nothing,
+                        Log.onError(TAG, "Error fetching GitHub repository search for '" + searchString + "'"));
 
         addRequest(searchString.hashCode(), subscription);
     }
 
     @NonNull
-    private Observable<List<GitHubRepository>> createNetworkObservable(@NonNull final String searchString) {
+    private Single<List<GitHubRepository>> createNetworkObservable(@NonNull final String searchString) {
         return getNetworkApi().search(Collections.singletonMap("q", searchString));
     }
 

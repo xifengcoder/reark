@@ -62,9 +62,9 @@ public final class DataLayerUtils {
                 case NETWORK_STATUS_ONGOING:
                     return DataStreamNotification.fetchingStart();
                 case NETWORK_STATUS_COMPLETED_WITH_VALUE:
-                    return DataStreamNotification.fetchingCompletedWithValue();
+                    return DataStreamNotification.fetchingValue();
                 case NETWORK_STATUS_COMPLETED_WITHOUT_VALUE:
-                    return DataStreamNotification.fetchingCompletedWithoutValue();
+                    return DataStreamNotification.fetchingEmpty();
                 case NETWORK_STATUS_ERROR:
                     return DataStreamNotification.fetchingError();
                 case NETWORK_STATUS_NONE:

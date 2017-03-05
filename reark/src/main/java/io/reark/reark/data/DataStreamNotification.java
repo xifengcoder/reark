@@ -36,7 +36,7 @@ public final class DataStreamNotification<T> {
         FETCHING_START,
         FETCHING_COMPLETED_WITH_VALUE,
         FETCHING_COMPLETED_WITHOUT_VALUE,
-        FETCHING_ERROR,
+        FETCHING_COMPLETED_WITH_ERROR,
         ON_NEXT
     }
 
@@ -83,18 +83,18 @@ public final class DataStreamNotification<T> {
     }
 
     @NonNull
-    public static<T> DataStreamNotification<T> fetchingCompletedWithValue() {
+    public static<T> DataStreamNotification<T> fetchingValue() {
         return new DataStreamNotification<>(Type.FETCHING_COMPLETED_WITH_VALUE, null, null);
     }
 
     @NonNull
-    public static<T> DataStreamNotification<T> fetchingCompletedWithoutValue() {
+    public static<T> DataStreamNotification<T> fetchingEmpty() {
         return new DataStreamNotification<>(Type.FETCHING_COMPLETED_WITHOUT_VALUE, null, null);
     }
 
     @NonNull
     public static<T> DataStreamNotification<T> fetchingError() {
-        return new DataStreamNotification<>(Type.FETCHING_ERROR, null, null);
+        return new DataStreamNotification<>(Type.FETCHING_COMPLETED_WITH_ERROR, null, null);
     }
 
     public boolean isFetchingStart() {
@@ -114,7 +114,7 @@ public final class DataStreamNotification<T> {
     }
 
     public boolean isFetchingError() {
-        return type == Type.FETCHING_ERROR;
+        return type == Type.FETCHING_COMPLETED_WITH_ERROR;
     }
 
     @Override

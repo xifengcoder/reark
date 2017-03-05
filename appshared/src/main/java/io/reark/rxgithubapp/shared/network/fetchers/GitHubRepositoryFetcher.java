@@ -32,10 +32,11 @@ import android.support.annotation.NonNull;
 import io.reark.reark.data.stores.interfaces.StorePutInterface;
 import io.reark.reark.pojo.NetworkRequestStatus;
 import io.reark.reark.utils.Log;
+import io.reark.reark.utils.RxUtils;
 import io.reark.rxgithubapp.shared.network.GitHubService;
 import io.reark.rxgithubapp.shared.network.NetworkApi;
 import io.reark.rxgithubapp.shared.pojo.GitHubRepository;
-import rx.Observable;
+import rx.Single;
 import rx.Subscription;
 import rx.functions.Action1;
 import rx.schedulers.Schedulers;
@@ -83,17 +84,18 @@ public class GitHubRepositoryFetcher extends AppFetcherBase<Uri> {
 
         Subscription subscription = createNetworkObservable(repositoryId)
                 .subscribeOn(Schedulers.computation())
+                .flatMap(gitHubRepositoryStore::put)
                 .doOnSubscribe(() -> startRequest(uri))
+                .doOnSuccess(updated -> completeRequest(uri, updated))
                 .doOnError(doOnError(uri))
-                .doOnCompleted(() -> completeRequest(uri))
-                .subscribe(gitHubRepositoryStore::put,
-                        e -> Log.e(TAG, "Error fetching GitHub repository " + repositoryId, e));
+                .subscribe(RxUtils::nothing,
+                        Log.onError(TAG, "Error fetching GitHub repository " + repositoryId));
 
         addRequest(repositoryId, subscription);
     }
 
     @NonNull
-    private Observable<GitHubRepository> createNetworkObservable(int repositoryId) {
+    private Single<GitHubRepository> createNetworkObservable(int repositoryId) {
         return getNetworkApi().getRepository(repositoryId);
     }
 

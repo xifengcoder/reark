@@ -28,6 +28,7 @@ package io.reark.reark.pojo;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import static io.reark.reark.pojo.NetworkRequestStatus.Status.NETWORK_STATUS_COMPLETED_WITHOUT_VALUE;
 import static io.reark.reark.pojo.NetworkRequestStatus.Status.NETWORK_STATUS_COMPLETED_WITH_VALUE;
 import static io.reark.reark.pojo.NetworkRequestStatus.Status.NETWORK_STATUS_ERROR;
 import static io.reark.reark.pojo.NetworkRequestStatus.Status.NETWORK_STATUS_NONE;
@@ -91,8 +92,11 @@ public final class NetworkRequestStatus {
     }
 
     @NonNull
-    public static NetworkRequestStatus completed(@NonNull final String uri) {
-        return new NetworkRequestStatus(get(uri), NETWORK_STATUS_COMPLETED_WITH_VALUE, 0, null);
+    public static NetworkRequestStatus completed(@NonNull final String uri, boolean withValue) {
+        Status status = withValue
+                ? NETWORK_STATUS_COMPLETED_WITH_VALUE
+                : NETWORK_STATUS_COMPLETED_WITHOUT_VALUE;
+        return new NetworkRequestStatus(get(uri), status, 0, null);
     }
 
     @NonNull

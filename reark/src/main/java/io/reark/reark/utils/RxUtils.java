@@ -26,6 +26,7 @@
 package io.reark.reark.utils;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,5 +57,8 @@ public final class RxUtils {
             list.add((T) item);
         }
         return list;
+    }
+
+    public static void nothing(@Nullable final Object __) {
     }
 }
