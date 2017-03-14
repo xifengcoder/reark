@@ -66,7 +66,7 @@ public final class DataLayerUtils {
                 case NETWORK_STATUS_COMPLETED_WITHOUT_VALUE:
                     return DataStreamNotification.fetchingEmpty();
                 case NETWORK_STATUS_ERROR:
-                    return DataStreamNotification.fetchingError();
+                    return DataStreamNotification.fetchingError(networkRequestStatus.getErrorMessage());
                 case NETWORK_STATUS_NONE:
                 default:
                     throw new IllegalStateException("Unexpected network status " + networkRequestStatus);

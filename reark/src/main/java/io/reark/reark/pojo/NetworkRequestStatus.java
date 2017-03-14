@@ -57,7 +57,7 @@ public final class NetworkRequestStatus {
 
         private final String status;
 
-        Status(@NonNull final String value) {
+        Status(@NonNull String value) {
             status = value;
         }
 
@@ -66,10 +66,10 @@ public final class NetworkRequestStatus {
         }
     }
 
-    private NetworkRequestStatus(@NonNull final String uri,
-                                 @NonNull final Status status,
+    private NetworkRequestStatus(@NonNull String uri,
+                                 @NonNull Status status,
                                  int errorCode,
-                                 @Nullable final String errorMessage) {
+                                 @Nullable String errorMessage) {
         this.uri = uri;
         this.status = status;
         this.errorCode = errorCode;
@@ -82,17 +82,17 @@ public final class NetworkRequestStatus {
     }
 
     @NonNull
-    public static NetworkRequestStatus ongoing(@NonNull final String uri) {
+    public static NetworkRequestStatus ongoing(@NonNull String uri) {
         return new NetworkRequestStatus(get(uri), NETWORK_STATUS_ONGOING, 0, null);
     }
 
     @NonNull
-    public static NetworkRequestStatus error(@NonNull final String uri, int errorCode, @Nullable final String errorMessage) {
+    public static NetworkRequestStatus error(@NonNull String uri, int errorCode, @Nullable String errorMessage) {
         return new NetworkRequestStatus(get(uri), NETWORK_STATUS_ERROR, errorCode, errorMessage);
     }
 
     @NonNull
-    public static NetworkRequestStatus completed(@NonNull final String uri, boolean withValue) {
+    public static NetworkRequestStatus completed(@NonNull String uri, boolean withValue) {
         Status status = withValue
                 ? NETWORK_STATUS_COMPLETED_WITH_VALUE
                 : NETWORK_STATUS_COMPLETED_WITHOUT_VALUE;

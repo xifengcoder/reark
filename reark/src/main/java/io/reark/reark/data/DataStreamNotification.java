@@ -47,11 +47,11 @@ public final class DataStreamNotification<T> {
     private final T value;
 
     @Nullable
-    private final Throwable error;
+    private final String error;
 
-    private DataStreamNotification(@NonNull final Type type,
-                                   @Nullable final T value,
-                                   @Nullable final Throwable error) {
+    private DataStreamNotification(@NonNull Type type,
+                                   @Nullable T value,
+                                   @Nullable String error) {
         this.type = get(type);
         this.value = value;
         this.error = error;
@@ -68,7 +68,7 @@ public final class DataStreamNotification<T> {
     }
 
     @Nullable
-    public Throwable getError() {
+    public String getError() {
         return error;
     }
 
@@ -93,8 +93,8 @@ public final class DataStreamNotification<T> {
     }
 
     @NonNull
-    public static<T> DataStreamNotification<T> fetchingError() {
-        return new DataStreamNotification<>(Type.FETCHING_COMPLETED_WITH_ERROR, null, null);
+    public static<T> DataStreamNotification<T> fetchingError(@Nullable String error) {
+        return new DataStreamNotification<>(Type.FETCHING_COMPLETED_WITH_ERROR, null, error);
     }
 
     public boolean isFetchingStart() {
