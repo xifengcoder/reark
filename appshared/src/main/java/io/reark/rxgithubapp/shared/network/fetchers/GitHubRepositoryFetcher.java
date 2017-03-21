@@ -86,7 +86,7 @@ public class GitHubRepositoryFetcher extends AppFetcherBase<Uri> {
                 .flatMap(gitHubRepositoryStore::put)
                 .doOnSubscribe(() -> startRequest(repositoryId, listenerId, uri))
                 .doOnError(doOnError(repositoryId, uri))
-                .doOnCompleted(() -> completeRequest(repositoryId, uri, updated))
+                .doOnSuccess(updated -> completeRequest(repositoryId, uri, updated))
                 .subscribe(RxUtils::nothing,
                         Log.onError(TAG, "Error fetching GitHub repository " + repositoryId));
 

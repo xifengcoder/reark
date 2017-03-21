@@ -102,7 +102,7 @@ public class GitHubRepositorySearchFetcher extends AppFetcherBase<Uri> {
                 .map(idList -> new GitHubRepositorySearch(searchString, idList))
                 .flatMap(gitHubRepositorySearchStore::put)
                 .doOnSubscribe(() -> startRequest(requestId, listenerId, uri))
-                .doOnCompleted(() -> completeRequest(requestId, uri, completed))
+                .doOnSuccess(updated -> completeRequest(requestId, uri, updated))
                 .doOnError(doOnError(requestId, uri))
                 .subscribe(RxUtils::nothing,
                         Log.onError(TAG, "Error fetching GitHub repository search for '" + searchString + "'"));

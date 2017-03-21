@@ -28,6 +28,12 @@ package io.reark.reark.pojo;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import static io.reark.reark.pojo.NetworkRequestStatus.Status.COMPLETED_WITHOUT_VALUE;
 import static io.reark.reark.pojo.NetworkRequestStatus.Status.COMPLETED_WITH_ERROR;
 import static io.reark.reark.pojo.NetworkRequestStatus.Status.COMPLETED_WITH_VALUE;
@@ -45,8 +51,9 @@ public final class NetworkRequestStatus {
 
     private static final String TAG = NetworkRequestStatus.class.getSimpleName();
 
-    private static final NetworkRequestStatus NONE =
-            new NetworkRequestStatus(Collections.emptySet(), "", NETWORK_STATUS_NONE, 0, null);
+
+    private static final NetworkRequestStatus NO_STATUS =
+            new NetworkRequestStatus(Collections.emptySet(), "", NONE, 0, null);
 
     @NonNull
     private final String uri;
@@ -94,17 +101,10 @@ public final class NetworkRequestStatus {
 
     @NonNull
     public static NetworkRequestStatus none() {
-        return NONE;
+        return NO_STATUS;
     }
 
     @NonNull
-    public static NetworkRequestStatus ongoing(@NonNull String uri) {
-        return new NetworkRequestStatus(get(uri), ONGOING, 0, null);
-    public static NetworkRequestStatus error(@NonNull String uri, int errorCode, @Nullable String errorMessage) {
-        return new NetworkRequestStatus(get(uri), COMPLETED_WITH_ERROR, errorCode, errorMessage);
-    public static NetworkRequestStatus completed(@NonNull String uri, boolean withValue) {
-        Status status = withValue ? COMPLETED_WITH_VALUE : COMPLETED_WITHOUT_VALUE;
-        return new NetworkRequestStatus(get(uri), status, 0, null);
     public String getUri() {
         return uri;
     }
@@ -173,19 +173,19 @@ public final class NetworkRequestStatus {
 
         @NonNull
         public Builder ongoing() {
-            this.status = NETWORK_STATUS_ONGOING;
+            this.status = ONGOING;
             return this;
         }
 
         @NonNull
         public Builder error() {
-            this.status = NETWORK_STATUS_ERROR;
+            this.status = COMPLETED_WITH_ERROR;
             return this;
         }
 
         @NonNull
-        public Builder completed() {
-            this.status = NETWORK_STATUS_COMPLETED;
+        public Builder completed(boolean withValue) {
+            this.status = withValue ? COMPLETED_WITH_VALUE : COMPLETED_WITHOUT_VALUE;
             return this;
         }
 
