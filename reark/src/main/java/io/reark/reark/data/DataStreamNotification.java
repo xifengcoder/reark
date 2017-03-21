@@ -33,10 +33,10 @@ import static io.reark.reark.utils.Preconditions.get;
 public final class DataStreamNotification<T> {
 
     public enum Type {
-        START,
+        ONGOING,
         ON_NEXT,
-        COMPLETED_WITHOUT_VALUE,
         COMPLETED_WITH_VALUE,
+        COMPLETED_WITHOUT_VALUE,
         COMPLETED_WITH_ERROR
     }
 
@@ -73,8 +73,8 @@ public final class DataStreamNotification<T> {
     }
 
     @NonNull
-    public static<T> DataStreamNotification<T> fetchingStart() {
-        return new DataStreamNotification<>(Type.START, null, null);
+    public static<T> DataStreamNotification<T> ongoing() {
+        return new DataStreamNotification<>(Type.ONGOING, null, null);
     }
 
     @NonNull
@@ -83,44 +83,46 @@ public final class DataStreamNotification<T> {
     }
 
     @NonNull
-    public static<T> DataStreamNotification<T> fetchingValue() {
+    public static<T> DataStreamNotification<T> completedWithValue() {
         return new DataStreamNotification<>(Type.COMPLETED_WITH_VALUE, null, null);
     }
 
     @NonNull
-    public static<T> DataStreamNotification<T> fetchingEmpty() {
+    public static<T> DataStreamNotification<T> completedWithoutValue() {
         return new DataStreamNotification<>(Type.COMPLETED_WITHOUT_VALUE, null, null);
     }
 
     @NonNull
-    public static<T> DataStreamNotification<T> fetchingError(@Nullable String error) {
+    public static<T> DataStreamNotification<T> completedWithError(@Nullable String error) {
         return new DataStreamNotification<>(Type.COMPLETED_WITH_ERROR, null, error);
     }
 
-    public boolean isFetchingStart() {
-        return type == Type.START;
+    public boolean isOngoing() {
+        return type == Type.ONGOING;
     }
 
     public boolean isOnNext() {
         return type == Type.ON_NEXT;
     }
 
-    public boolean isFetchingCompletedWithoutValue() {
-        return type == Type.COMPLETED_WITHOUT_VALUE;
-    }
-
-    public boolean isFetchingCompletedWithValue() {
+    public boolean isCompletedWithValue() {
         return type == Type.COMPLETED_WITH_VALUE;
     }
 
-    public boolean isFetchingError() {
+    public boolean isCompletedWithoutValue() {
+        return type == Type.COMPLETED_WITHOUT_VALUE;
+    }
+
+    public boolean isCompletedWithError() {
         return type == Type.COMPLETED_WITH_ERROR;
     }
 
-    public boolean isFetchingCompleted() {
-        return isFetchingCompletedWithoutValue()
-                || isFetchingCompletedWithValue()
-                || isFetchingError();
+    public boolean isCompletedWithSuccess() {
+        return isCompletedWithValue() || isCompletedWithoutValue();
+    }
+
+    public boolean isCompleted() {
+        return isCompletedWithSuccess() || isCompletedWithError();
     }
 
     @Override
