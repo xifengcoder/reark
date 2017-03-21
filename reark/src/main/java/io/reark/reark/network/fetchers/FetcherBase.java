@@ -101,6 +101,7 @@ public abstract class FetcherBase<T> implements Fetcher<T> {
         release(requestId);
     }
 
+    protected void completeRequest(@NonNull final String uri, boolean withValue) {
     protected void errorRequest(int requestId, @NonNull String uri, int errorCode, @Nullable String errorMessage) {
         Log.v(TAG, String.format("errorRequest(%s, %s, %s, %s)", requestId, get(uri), errorCode, errorMessage));
 
