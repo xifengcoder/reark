@@ -174,7 +174,8 @@ public abstract class ContentProviderStoreCoreBase<U> {
                         stream.debounce(groupingTimeout, TimeUnit.MILLISECONDS),
                         stream.skip(groupMaxSize - 1))
                         .first() // Complete observable after the first reached trigger
-                        .repeatWhen(observable -> observable))); // Resubscribe immediately for the next buffer
+                        .repeatWhen(observable -> observable))) // Resubscribe immediately for the next buffer
+                .onBackpressureBuffer();
     }
 
     @NonNull
