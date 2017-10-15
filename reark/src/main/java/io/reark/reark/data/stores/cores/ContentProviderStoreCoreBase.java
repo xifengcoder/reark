@@ -42,6 +42,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
+import io.reactivex.Maybe;
+import io.reactivex.Observable;
+import io.reactivex.Single;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Function;
+import io.reactivex.schedulers.Schedulers;
+import io.reactivex.subjects.PublishSubject;
+import io.reactivex.subjects.Subject;
 import io.reark.reark.data.stores.cores.operations.CoreOperation;
 import io.reark.reark.data.stores.cores.operations.CoreOperationResult;
 import io.reark.reark.data.stores.cores.operations.CoreValue;
@@ -50,13 +58,6 @@ import io.reark.reark.data.stores.cores.operations.CoreValuePut;
 import io.reark.reark.utils.Log;
 import io.reark.reark.utils.ObjectLockHandler;
 import io.reark.reark.utils.Preconditions;
-import rx.Observable;
-import rx.Single;
-import rx.Subscription;
-import rx.functions.Func1;
-import rx.schedulers.Schedulers;
-import rx.subjects.PublishSubject;
-import rx.subjects.Subject;
 
 import static io.reark.reark.utils.Preconditions.checkNotNull;
 
@@ -87,13 +88,13 @@ public abstract class ContentProviderStoreCoreBase<U> {
     private final PublishSubject<CoreValue<U>> operationSubject = PublishSubject.create();
 
     @NonNull
-    private final ConcurrentMap<Integer, Subject<Boolean, Boolean>> completionNotifiers = new ConcurrentHashMap<>(20, 0.75f, 4);
+    private final ConcurrentMap<Integer, Subject<Boolean>> completionNotifiers = new ConcurrentHashMap<>(20, 0.75f, 4);
 
     @NonNull
     private final ObjectLockHandler<Uri> locker = new ObjectLockHandler<>();
 
     @Nullable
-    private Subscription updateSubscription;
+    private Disposable updateDisposable;
 
     private final int groupMaxSize;
 
@@ -120,14 +121,13 @@ public abstract class ContentProviderStoreCoreBase<U> {
 
         // Observable transforming inserts, updates and deletes to ContentProviderOperations
         Observable<CoreOperation> operationObservable = operationSubject
-                .onBackpressureBuffer()
                 .observeOn(Schedulers.io())
                 .flatMap(this::createCoreOperation);
 
         // Group the operations to a list that should be executed in one batch. The default
         // grouping logic is suitable for pojo stores, but some stores may need to provide
         // their own grouping logic if for example buffering delays are undesirable.
-        updateSubscription = groupOperations(operationObservable)
+        updateDisposable = groupOperations(operationObservable)
                 .observeOn(Schedulers.computation())
                 .doOnNext(operations -> Log.v(TAG, "Grouped list of " + operations.size()))
                 .concatMap(this::applyOperations)
@@ -135,7 +135,7 @@ public abstract class ContentProviderStoreCoreBase<U> {
                         // On error we can't release the processing lock, as the Uri reference
                         // is lost. It's perhaps better to error out of the subscription than
                         // to leave some of the Uris locked and continue.
-                        error -> Log.e(TAG, "Error while handling data operations!", error));
+                        Log.onError(TAG, "Error while handling data operations!"));
     }
 
     @NonNull
@@ -145,7 +145,7 @@ public abstract class ContentProviderStoreCoreBase<U> {
                     return contentResolver.applyBatch(getAuthority(), contentOperations);
                 })
                 .doOnNext(result -> Log.v(TAG, String.format("Applied %s operations", result.length)))
-                .flatMap(Observable::from)
+                .flatMap(Observable::fromArray)
                 .zipWith(operations, CoreOperationResult::new);
     }
 
@@ -302,30 +302,34 @@ public abstract class ContentProviderStoreCoreBase<U> {
     }
 
     @NonNull
-    private Single<Boolean> createModifyingOperation(@NonNull final Func1<Integer, CoreValue<U>> valueFunc) {
+    private Single<Boolean> createModifyingOperation(@NonNull final Function<Integer, CoreValue<U>> valueFunc) {
         int index = ++nextOperationIndex;
 
         completionNotifiers.put(index, PublishSubject.create());
-        operationSubject.onNext(valueFunc.call(index));
+
+        try {
+            operationSubject.onNext(valueFunc.apply(index));
+        } catch (Exception e) {
+            Log.e(TAG, "Error creating operation!", e);
+        }
 
         return completionNotifiers.get(index)
-                .first()
-                .toSingle();
+                .first(false);
     }
 
     @NonNull
-    protected Observable<List<U>> getAllOnce(@NonNull final Uri uri) {
+    protected Single<List<U>> getAllOnce(@NonNull final Uri uri) {
         checkNotNull(uri);
 
-        return Observable.fromCallable(() -> queryList(uri))
+        return Single.fromCallable(() -> queryList(uri))
                 .subscribeOn(Schedulers.io());
     }
 
     @NonNull
-    protected Observable<U> getOnce(@NonNull final Uri uri) {
+    protected Maybe<U> getOnce(@NonNull final Uri uri) {
         return getAllOnce(Preconditions.get(uri))
                 .filter(list -> !list.isEmpty())
-                .doOnNext(list -> {
+                .doOnSuccess(list -> {
                     if (list.size() > 1) {
                         Log.w(TAG, String.format("%s items found in a get for a single item", list.size()));
                     }

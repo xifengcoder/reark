@@ -33,6 +33,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import io.reactivex.Single;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
+import io.reactivex.schedulers.Schedulers;
 import io.reark.reark.data.stores.interfaces.StorePutInterface;
 import io.reark.reark.pojo.NetworkRequestStatus;
 import io.reark.reark.utils.Log;
@@ -40,10 +44,6 @@ import io.reark.rxgithubapp.shared.network.GitHubService;
 import io.reark.rxgithubapp.shared.network.NetworkApi;
 import io.reark.rxgithubapp.shared.pojo.GitHubRepository;
 import io.reark.rxgithubapp.shared.pojo.GitHubRepositorySearch;
-import rx.Observable;
-import rx.Subscription;
-import rx.functions.Action1;
-import rx.schedulers.Schedulers;
 
 import static io.reark.reark.utils.Preconditions.checkNotNull;
 import static io.reark.reark.utils.Preconditions.get;
@@ -58,7 +58,7 @@ public class GitHubRepositorySearchFetcher extends AppFetcherBase<Uri> {
     private final StorePutInterface<GitHubRepositorySearch> gitHubRepositorySearchStore;
 
     public GitHubRepositorySearchFetcher(@NonNull final NetworkApi networkApi,
-                                         @NonNull final Action1<NetworkRequestStatus> updateNetworkRequestStatus,
+                                         @NonNull final Consumer<NetworkRequestStatus> updateNetworkRequestStatus,
                                          @NonNull final StorePutInterface<GitHubRepository> gitHubRepositoryStore,
                                          @NonNull final StorePutInterface<GitHubRepositorySearch> gitHubRepositorySearchStore) {
         super(networkApi, updateNetworkRequestStatus);
@@ -89,7 +89,7 @@ public class GitHubRepositorySearchFetcher extends AppFetcherBase<Uri> {
 
         Log.d(TAG, "fetch(" + searchString + ")");
 
-        Subscription subscription = createNetworkObservable(searchString)
+        Disposable disposable = createNetworkObservable(searchString)
                 .subscribeOn(Schedulers.computation())
                 .map((repositories) -> {
                     final List<Integer> repositoryIds = new ArrayList<>(repositories.size());
@@ -99,17 +99,17 @@ public class GitHubRepositorySearchFetcher extends AppFetcherBase<Uri> {
                     }
                     return new GitHubRepositorySearch(searchString, repositoryIds);
                 })
-                .doOnSubscribe(() -> startRequest(requestId, uri))
-                .doOnCompleted(() -> completeRequest(requestId, uri))
+                .doOnSubscribe(__ -> startRequest(requestId, uri))
+                .doOnDispose(() -> completeRequest(requestId, uri))
                 .doOnError(doOnError(requestId, uri))
                 .subscribe(gitHubRepositorySearchStore::put,
-                        e -> Log.e(TAG, "Error fetching GitHub repository search for '" + searchString + "'", e));
+                        Log.onError(TAG, "Error fetching GitHub repository search for '" + searchString + "'"));
 
-        addRequest(requestId, subscription);
+        addRequest(requestId, disposable);
     }
 
     @NonNull
-    private Observable<List<GitHubRepository>> createNetworkObservable(@NonNull final String searchString) {
+    private Single<List<GitHubRepository>> createNetworkObservable(@NonNull final String searchString) {
         return getNetworkApi().search(Collections.singletonMap("q", searchString));
     }
 

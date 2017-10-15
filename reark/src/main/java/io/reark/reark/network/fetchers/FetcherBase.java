@@ -27,19 +27,18 @@ package io.reark.reark.network.fetchers;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.util.Pair;
 
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
 import io.reark.reark.pojo.NetworkRequestStatus;
 import io.reark.reark.utils.Log;
 import io.reark.reark.utils.ObjectLockHandler;
-import retrofit2.adapter.rxjava.HttpException;
-import rx.Subscription;
-import rx.functions.Action1;
+import retrofit2.HttpException;
 
 import static io.reark.reark.utils.Preconditions.checkNotNull;
 import static io.reark.reark.utils.Preconditions.get;
@@ -57,18 +56,18 @@ public abstract class FetcherBase<T> implements Fetcher<T> {
     private static final int NO_ERROR_CODE = -1;
 
     @NonNull
-    private final Action1<NetworkRequestStatus> updateNetworkRequestStatus;
+    private final Consumer<NetworkRequestStatus> updateNetworkRequestStatus;
 
     @NonNull
     private final Map<Integer, Set<Integer>> listeners = new ConcurrentHashMap<>(20, 0.75f, 2);
 
     @NonNull
-    private final Map<Integer, Subscription> requests = new ConcurrentHashMap<>(20, 0.75f, 2);
+    private final Map<Integer, Disposable> requests = new ConcurrentHashMap<>(20, 0.75f, 2);
 
     @NonNull
     private final ObjectLockHandler<Integer> locker = new ObjectLockHandler<>();
 
-    protected FetcherBase(@NonNull Action1<NetworkRequestStatus> updateNetworkRequestStatus) {
+    protected FetcherBase(@NonNull Consumer<NetworkRequestStatus> updateNetworkRequestStatus) {
         this.updateNetworkRequestStatus = get(updateNetworkRequestStatus);
     }
 
@@ -77,11 +76,17 @@ public abstract class FetcherBase<T> implements Fetcher<T> {
 
         lock(requestId);
 
-        updateNetworkRequestStatus.call(new NetworkRequestStatus.Builder()
+        NetworkRequestStatus status = new NetworkRequestStatus.Builder()
                 .uri(uri)
                 .listeners(getListeners(requestId))
                 .ongoing()
-                .build());
+                .build();
+
+        try {
+            updateNetworkRequestStatus.accept(status);
+        } catch (Exception e) {
+            Log.e(TAG, "Error updating status", e);
+        }
 
         release(requestId);
     }
@@ -91,11 +96,17 @@ public abstract class FetcherBase<T> implements Fetcher<T> {
 
         lock(requestId);
 
-        updateNetworkRequestStatus.call(new NetworkRequestStatus.Builder()
+        NetworkRequestStatus status = new NetworkRequestStatus.Builder()
                 .uri(uri)
                 .listeners(getListeners(requestId))
                 .completed()
-                .build());
+                .build();
+
+        try {
+            updateNetworkRequestStatus.accept(status);
+        } catch (Exception e) {
+            Log.e(TAG, "Error updating status", e);
+        }
 
         release(requestId);
     }
@@ -105,33 +116,39 @@ public abstract class FetcherBase<T> implements Fetcher<T> {
 
         lock(requestId);
 
-        updateNetworkRequestStatus.call(new NetworkRequestStatus.Builder()
+        NetworkRequestStatus status = new NetworkRequestStatus.Builder()
                 .uri(uri)
                 .listeners(getListeners(requestId))
                 .error()
                 .errorCode(errorCode)
                 .errorMessage(errorMessage)
-                .build());
+                .build();
+
+        try {
+            updateNetworkRequestStatus.accept(status);
+        } catch (Exception e) {
+            Log.e(TAG, "Error updating status", e);
+        }
 
         release(requestId);
     }
 
-    protected void addRequest(int requestId, @NonNull Subscription subscription) {
+    protected void addRequest(int requestId, @NonNull Disposable disposable) {
         Log.v(TAG, String.format("addRequest(%s)", requestId));
-        checkNotNull(subscription);
+        checkNotNull(disposable);
 
         lock(requestId);
 
         if (requests.containsKey(requestId)) {
-            Subscription oldRequest = requests.remove(requestId);
+            Disposable oldRequest = requests.remove(requestId);
 
-            if (!oldRequest.isUnsubscribed()) {
+            if (!oldRequest.isDisposed()) {
                 Log.w(TAG, "Unexpected subscribed request " + requestId);
-                oldRequest.unsubscribe();
+                oldRequest.dispose();
             }
         }
 
-        requests.put(requestId, subscription);
+        requests.put(requestId, disposable);
 
         release(requestId);
     }
@@ -158,7 +175,7 @@ public abstract class FetcherBase<T> implements Fetcher<T> {
         lock(requestId);
 
         boolean isOngoing = requests.containsKey(requestId)
-                && !requests.get(requestId).isUnsubscribed();
+                && !requests.get(requestId).isDisposed();
 
         release(requestId);
 
@@ -178,7 +195,7 @@ public abstract class FetcherBase<T> implements Fetcher<T> {
     }
 
     @NonNull
-    protected Action1<Throwable> doOnError(int requestId, @NonNull String uri) {
+    protected Consumer<Throwable> doOnError(int requestId, @NonNull String uri) {
         checkNotNull(uri);
 
         return throwable -> {
